@@ -128,7 +128,7 @@ namespace GLSLPT
         
         std::vector<RadeonRays::bbox> bounds;
         bounds.resize(meshInstances.size());
-
+        //閬嶅巻鎵�鏈夌殑MeshInstance,
         for (int i = 0; i < meshInstances.size(); i++)
         {
             RadeonRays::bbox bbox = meshes[meshInstances[i].meshID]->bvh->Bounds();
@@ -163,7 +163,7 @@ namespace GLSLPT
         sceneBvh->Build(&bounds[0], bounds.size());
         sceneBounds = sceneBvh->Bounds();
     }
-    //遍历meshes，每一个meshg构建BVH
+    //閬嶅巻meshes锛屾瘡涓�涓猰eshg鏋勫缓BVH
     void Scene::createBLAS()
     {
         

@@ -1,27 +1,3 @@
-/*
- * MIT License
- *
- * Copyright(c) 2019 Asif Ali
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 #include <time.h>
 #include <math.h>
 #include <string>
@@ -186,6 +162,7 @@ void Update(float secondsElapsed)
 {
     keyPressed = false;
 
+    //相机视角交互逻辑
     if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow) && ImGui::IsAnyMouseDown() && !ImGuizmo::IsOver())
     {
         if (ImGui::IsMouseDown(0))
@@ -263,7 +240,7 @@ void EditTransform(const float* view, const float* projection, float* matrix)
 void MainLoop(void* arg)
 {
     LoopData& loopdata = *(LoopData*)arg;
-
+    //首先开始处理事件
     SDL_Event event;
     while (SDL_PollEvent(&event))
     {
@@ -274,6 +251,7 @@ void MainLoop(void* arg)
         }
         if (event.type == SDL_WINDOWEVENT)
         {
+            //处理窗口RESIZE事件
             if (event.window.event == SDL_WINDOWEVENT_RESIZED)
             {
                 renderOptions.windowResolution = iVec2(event.window.data1, event.window.data2);
@@ -295,7 +273,10 @@ void MainLoop(void* arg)
             }
         }
     }
+    //然后开始渲染逻辑
+    
 
+    //渲染ui
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame(loopdata.mWindow);
     ImGui::NewFrame();
@@ -322,6 +303,7 @@ void MainLoop(void* arg)
         for (int i = 0; i < sceneFiles.size(); ++i)
             scenes.push_back(sceneFiles[i].c_str());
 
+        //场景切换逻辑
         if (ImGui::Combo("Scene", &sampleSceneIdx, scenes.data(), scenes.size()))
         {
             LoadScene(sceneFiles[sampleSceneIdx]);
@@ -577,21 +559,12 @@ int main(int argc, char** argv)
 
     LoopData loopdata;
 
-#ifdef __APPLE__
-    // GL 3.2 Core + GLSL 150
-    const char* glsl_version = "#version 150";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-#else
     // GL 3.0 + GLSL 130
     const char* glsl_version = "#version 130";
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-#endif
 
     // Create window with graphics context
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);

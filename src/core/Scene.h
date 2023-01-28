@@ -75,33 +75,25 @@ namespace GLSLPT
 
         // Materials
         std::vector<Material> materials;
-
         // Instances
         std::vector<MeshInstance> meshInstances;
-
         // Lights
         std::vector<Light> lights;
-
         // Environment Map
         EnvironmentMap* envMap;
-
         // Camera
         Camera* camera;
-
         // Bvh
         RadeonRays::BvhTranslator bvhTranslator; // Produces a flat bvh array for GPU consumption
         RadeonRays::bbox sceneBounds;
-
         // Texture Data
         std::vector<Texture*> textures;
         std::vector<unsigned char> textureMapsArray;
-
         bool initialized;
         bool dirty;
         // To check if scene elements need to be resent to GPU
         bool instancesModified = false;
         bool envMapModified = false;
-
     private:
         RadeonRays::Bvh* sceneBvh;
         void createBLAS();

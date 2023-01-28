@@ -15,6 +15,22 @@ namespace GLSLPT
         return new Program(shaders);
     }
 
+
+    void OutputShader(const ShaderInclude::ShaderSource& ShaderObj, std::ofstream& r) {
+        r << "----------------------------------------------------" << std::endl; 
+        r << ShaderObj.src << std::endl; 
+        r << "----------------------------------------------------" << std::endl;
+    }
+    template<typename... Args>
+    void OutputShaders( const std::string& path,Args&&... ShaderObj) {
+        std::ofstream r(path.c_str());
+        if (!r.is_open()) {
+            throw std::exception("fail to open file");
+        }
+        (OutputShader(ShaderObj,r),...);
+        r.close();
+    }
+
     Renderer::Renderer(Scene* scene, const std::string& shadersDirectory)
         : scene(scene)
         , BVHBuffer(0)
@@ -111,10 +127,15 @@ namespace GLSLPT
 
     void Renderer::InitGPUDataBuffers()
     {
+        /*
+        GL_PACK_ALIGNMENT
+        Specifies the alignment requirements for the start of each pixel row in memory. The allowable values are 1 (byte-alignment), 2 (rows aligned to even-numbered bytes), 4 (word-alignment), and 8 (rows start on double-word boundaries).
+        The other storage parameter affects how pixel data is read from client memory:
+        */
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
         // Create buffer and texture for BVH
-        //ÎÆÀí»º³å¶ÔÏó
+        //çº¹ç†ç¼“å†²å¯¹è±¡
         glGenBuffers(1, &BVHBuffer);
         glBindBuffer(GL_TEXTURE_BUFFER, BVHBuffer);
         glBufferData(GL_TEXTURE_BUFFER, sizeof(RadeonRays::BvhTranslator::Node) * scene->bvhTranslator.nodes.size(), &scene->bvhTranslator.nodes[0], GL_STATIC_DRAW);
@@ -179,7 +200,8 @@ namespace GLSLPT
         {
             glGenTextures(1, &textureMapsArrayTex);
             glBindTexture(GL_TEXTURE_2D_ARRAY, textureMapsArrayTex);
-            glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8, scene->renderOptions.texArrayWidth, scene->renderOptions.texArrayHeight, scene->textures.size(), 0, GL_RGBA, GL_UNSIGNED_BYTE, &scene->textureMapsArray[0]);
+            glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8, scene->renderOptions.texArrayWidth, scene->renderOptions.texArrayHeight, scene->textures.size(),
+                0, GL_RGBA, GL_UNSIGNED_BYTE, &scene->textureMapsArray[0]);
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
@@ -369,13 +391,14 @@ namespace GLSLPT
 
     void Renderer::InitShaders()
     {
-        //³õÊ¼»¯shader
+        //åˆå§‹åŒ–shader
         ShaderInclude::ShaderSource vertexShaderSrcObj = ShaderInclude::load(shadersDirectory + "common/vertex.glsl");
-        ShaderInclude::ShaderSource pathTraceShaderSrcObj = ShaderInclude::load(shadersDirectory + "tile.glsl");
+        ShaderInclude::ShaderSource pathTraceShaderSrcObj = ShaderInclude::load(shadersDirectory + "res.glsl");
         ShaderInclude::ShaderSource pathTraceShaderLowResSrcObj = ShaderInclude::load(shadersDirectory + "preview.glsl");
         ShaderInclude::ShaderSource outputShaderSrcObj = ShaderInclude::load(shadersDirectory + "output.glsl");
         ShaderInclude::ShaderSource tonemapShaderSrcObj = ShaderInclude::load(shadersDirectory + "tonemap.glsl");
-        //Ìí¼ÓÔ¤¶¨Òåºê
+        OutputShaders("./res.glsl", pathTraceShaderLowResSrcObj, outputShaderSrcObj, tonemapShaderSrcObj);
+        //åˆ†æžrenderOptionsæ·»åŠ å‘æºç ä¸­é¢„å®šä¹‰å®
         // Add preprocessor defines for conditional compilation
         std::string pathtraceDefines = "";
         std::string tonemapDefines = "";
@@ -463,7 +486,11 @@ namespace GLSLPT
                 idx = 0;
             tonemapShaderSrcObj.src.insert(idx + 1, tonemapDefines);
         }
-
+        /*
+        outputShaderç”¨äºŽå°†ç»“æžœç»˜åˆ¶åˆ°é»˜è®¤å¸§ç¼“å†²
+        pathTraceShaderç”¨äºŽç»“æžœçš„ä¸€ä¸ªç“¦ç‰‡
+        
+        */
         pathTraceShader = LoadShaders(vertexShaderSrcObj, pathTraceShaderSrcObj);
         pathTraceShaderLowRes = LoadShaders(vertexShaderSrcObj, pathTraceShaderLowResSrcObj);
         outputShader = LoadShaders(vertexShaderSrcObj, outputShaderSrcObj);
@@ -474,7 +501,7 @@ namespace GLSLPT
         pathTraceShader->Use();
         shaderObject = pathTraceShader->getObject();
 
-        //³õÊ¼»¯pathTraceShaderÖÐÒ»Ð©uniformµÄÖ¸±ê
+        //åˆå§‹åŒ–pathTraceShaderä¸­ä¸€äº›uniformçš„æŒ‡æ ‡
         if (scene->envMap)
         {
             glUniform2f(glGetUniformLocation(shaderObject, "envMapRes"), (float)scene->envMap->width, (float)scene->envMap->height);
@@ -498,7 +525,7 @@ namespace GLSLPT
         glUniform1i(glGetUniformLocation(shaderObject, "envMapCDFTex"), 10);
         pathTraceShader->StopUsing();
 
-        //ÉÏ´«pathTraceShaderLowResÖÐµÄuniform
+        //ä¸Šä¼ pathTraceShaderLowResä¸­çš„uniform
         pathTraceShaderLowRes->Use();
         shaderObject = pathTraceShaderLowRes->getObject();
 
